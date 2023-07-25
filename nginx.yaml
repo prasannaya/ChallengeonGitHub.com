@@ -1,0 +1,75 @@
+---
+- name: install and secure nginx webserver on ubuntu
+  hosts: all
+  become: yes
+  tasks:
+    - name: install nginx
+      ansible.builtin.apt:
+        name: nginx
+        update_cache: yes  
+        state: present
+
+    - name: copy my HTML content
+      ansible.builtin.copy:
+        content:
+          <html>
+          <head>
+          <title>Hello World</title>
+          </head>
+          <body>
+          <h1>Hello World!</h>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+
+    - name: enable nginx service
+      service:
+        name: nginx
+        enabled: yes
+        state: started
+
+    - name: install OpenSSL
+      ansible.builtin.apt:
+        name: openssl
+        state: present
+
+    - name: generate self-signed SSL certificate
+      shell:
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout /etc/ssl/private/nginx-selfsigned.key \
+        -out /etc/ssl/certs/nginx-selfsigned.crt \
+        -subj "/C=US/ST=PA/L=Philadelphia/O=amazon/CN=*.us-west-2.compute.internal"
+
+      notify:
+        - restart nginx web server
+
+    - name: configure nginx for https
+      ansible.builtin.copy:
+        content:
+          server {
+              listen 80;
+              server_name ec2-54-245-34-221.us-west-2.compute.amazonaws.com;
+              return 301 https://ec2-54-245-34-221.us-west-2.compute.amazonaws.com;
+          }
+
+         server {
+             listen 443 ssl;
+             server_name ec2-54-245-34-221.us-west-2.compute.amazonaws.com;
+             ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
+             ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+             location / {
+                 root /var/www/html;
+                 index index.html;
+             }
+         }
+      
+        dest: /etc/nginx/sites-available/default
+
+      notify:
+        - restart nginx web server
+
+  handlers:
+    - name: restart nginx web server
+      service:
+        name: nginx
+        state: restarted

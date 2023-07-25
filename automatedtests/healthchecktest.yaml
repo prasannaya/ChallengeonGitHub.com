@@ -1,0 +1,19 @@
+---
+- name: health check test
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+    - name: check if my nginx webserver is running
+      uri:
+        url: https://ec2-54-245-34-221.us-west-2.compute.amazonaws.com
+        return_content: yes
+        validate_certs: no
+      register: webserver_response
+
+    - name: output should contain "Hello-World!" 
+      assert:
+        that:
+          - "'Hello World!' in webserver_response.content"
+
+

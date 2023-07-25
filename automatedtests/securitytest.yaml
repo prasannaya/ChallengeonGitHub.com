@@ -1,0 +1,18 @@
+---
+- name: security check test
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+    - name: check if my http is redirected to https
+      uri:
+        url: http://ec2-54-245-34-221.us-west-2.compute.amazonaws.com
+        return_content: yes
+        validate_certs: no
+      register: http_response
+     
+    - name: validation for https
+      assert:
+        that:
+          - http_response.status == 200
+          - "'https' in http_response.url"

@@ -1,0 +1,29 @@
+---
+- name: install apache webserver on ubuntu
+  hosts: all
+  become: yes
+  tasks:
+    - name: install apache2
+      ansible.builtin.apt:
+        name: apache2
+        state: present
+    - name: copy my HTML file
+      ansible.builtin.copy:
+        content:
+          <html>
+          <head>
+          <title>Hello World</title>
+          </head>
+          <body>
+          <h1>Hello World!</h>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+      notify:
+        - restart apache
+   
+  handlers:
+    - name: restart apache web server 
+      service:
+        name: apache2
+        state: restarted

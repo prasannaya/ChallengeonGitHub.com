@@ -1,0 +1,16 @@
+---
+- name: Performance test
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+    - name: measure my nginx webserver response time
+      uri:
+        url: https://ec2-54-245-34-221.us-west-2.compute.amazonaws.com
+        validate_certs: no
+      register: webserver_response
+      
+    
+    - name : response time
+      debug:
+        msg: "Response time: {{ webserver_response.elapsed }} seconds"
